@@ -298,12 +298,6 @@ def translate_detect_lang(word, word_eol, userdata):
 
     return hexchat.EAT_ALL
 
-hexchat.hook_command(
-    "TR", translate_detect_lang,
-    help="/TR <target language> <message> - translates message into the "
-         "language specified.  This auto detects the source language.  "
-         "This is not threaded.")
-
 
 def translate_no_detect(word, word_eol, userdata):
     """
@@ -323,11 +317,6 @@ def translate_no_detect(word, word_eol, userdata):
                      + " to " + Translator.find_lang_name(dest_lang)
                      + ": " + text)
     return hexchat.EAT_ALL
-
-hexchat.hook_command(
-    "TM", translate_no_detect,
-    help="/TM <source_language> <target_language> <message> - translates "
-         "message into the language specified.  This is not threaded.")
 
 
 def add_user(word, word_eol, userdata):
@@ -353,15 +342,6 @@ def add_user(word, word_eol, userdata):
 
     return hexchat.EAT_ALL
 
-hexchat.command('MENU ADD "$NICK/[+] AutoTranslate" "ADDTR %s"')
-hexchat.hook_command(
-    "ADDTR", add_user,
-    help="/ADDTR <user_nick> <target_language> <source_language> - adds the "
-         "user to the watch list for automatic translations.  If "
-         "target_language is not specified, then the DEFAULT_LANG set will "
-         "be used.  If source_language is not specified, then language "
-         "detection will be used.")
-
 
 def remove_user(word, word_eol, userdata):
     """
@@ -379,12 +359,6 @@ def remove_user(word, word_eol, userdata):
 
     return hexchat.EAT_ALL
 
-hexchat.command('MENU ADD "$NICK/[-] AutoTranslate" "RMTR %s"')
-hexchat.hook_command(
-    "RMTR", remove_user,
-    help="/RMTR <user_nick> - removes user_nick from "
-         "the watch list for automatic translations.")
-
 
 def print_watch_list(word, word_eol, userdata):
     """
@@ -395,21 +369,12 @@ def print_watch_list(word, word_eol, userdata):
     hexchat.prnt("WatchList: %s" % (" ".join(users)))
     return hexchat.EAT_ALL
 
-hexchat.hook_command(
-    "LSUSERS", print_watch_list,
-    help="/LSUSERS - prints out all users on the watch list for automatic "
-         "translations to the screen locally.")
-
 
 def read_error(word, word_eol, userdata):
     """
         Prints out the last error.
     """
     hexchat.prnt("Last error: " + LAST_ERROR)
-
-hexchat.hook_command(
-    "LASTERROR", read_error, help="/LASTERROR - prints out the last error "
-                                  "message to screen locally.")
 
 
 def add_job(word, word_eol, userdata):
@@ -426,8 +391,6 @@ def add_job(word, word_eol, userdata):
 
     return hexchat.EAT_NONE
 
-hexchat.hook_print("Channel Message", add_job)
-
 
 def unload_translator(userdata):
     """
@@ -437,6 +400,45 @@ def unload_translator(userdata):
     ThreadController.worker.kill = True
     ThreadController.add_job(None)
     hexchat.prnt('Translator is unloaded')
+
+
+hexchat.hook_command(
+    "TR", translate_detect_lang,
+    help="/TR <target language> <message> - translates message into the "
+         "language specified.  This auto detects the source language.  "
+         "This is not threaded.")
+
+hexchat.hook_command(
+    "TM", translate_no_detect,
+    help="/TM <source_language> <target_language> <message> - translates "
+         "message into the language specified.  This is not threaded.")
+
+hexchat.command('MENU ADD "$NICK/[+] AutoTranslate" "ADDTR %s"')
+hexchat.hook_command(
+    "ADDTR", add_user,
+    help="/ADDTR <user_nick> <target_language> <source_language> - adds the "
+         "user to the watch list for automatic translations.  If "
+         "target_language is not specified, then the DEFAULT_LANG set will "
+         "be used.  If source_language is not specified, then language "
+         "detection will be used.")
+
+hexchat.command('MENU ADD "$NICK/[-] AutoTranslate" "RMTR %s"')
+hexchat.hook_command(
+    "RMTR", remove_user,
+    help="/RMTR <user_nick> - removes user_nick from "
+         "the watch list for automatic translations.")
+
+hexchat.hook_command(
+    "LSUSERS", print_watch_list,
+    help="/LSUSERS - prints out all users on the watch list for automatic "
+         "translations to the screen locally.")
+
+hexchat.hook_command(
+    "LASTERROR", read_error,
+    help="/LASTERROR - prints out the last error "
+         "message to screen locally.")
+
+hexchat.hook_print("Channel Message", add_job)
 
 hexchat.hook_unload(unload_translator)
 
