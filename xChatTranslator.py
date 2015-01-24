@@ -135,24 +135,26 @@ class Translator:
         src = cls.find_lang_code(source_lang)
         dest = cls.find_lang_code(dest_lang)
 
+        params = {
+            'format': ['json'],
+            'callback': [],
+        }
+
         # using {!r} should avoid Bad Request errors
         # because of quotation marks
         if src is None and dest is not None:
+            params['diagnostics'] = ['true']
+            params['env'] = ['http://datatables.org/alltables.env']
             query = 'select * from google.translate where q={!r} ' \
-                    'and target="{}";'.format(message, dest)
+                    'and target={!r};'.format(message, dest)
         elif src is not None and dest is not None:
+            params['env'] = ['store://datatables.org/alltableswithkeys']
             query = 'select * from google.translate where q={!r} ' \
-                    'and target="{}" ' \
-                    'and source="{}e";'.format(message, dest, src)
+                    'and target={!r} and source={!r};' \
+                .format(message, dest, src)
         else:
             return None
-        print(query)
-        params = {
-            'diagnostics': ['true'],
-            'format': ['json'],
-            'q': query,
-            'env': ['http://datatables.org/alltables.env']
-        }
+        params['q'] = [query]
         baseurl = 'http://query.yahooapis.com/v1/public/yql'
         query_string = urllib.parse.urlencode(params, doseq=True,
                                               encoding='utf-8')
@@ -336,7 +338,7 @@ def add_user(word, word_eol, userdata):
         hexchat.prnt("You must specify a user.")
         return hexchat.EAT_ALL
 
-    user = word[1]
+    user = hexchat.strip(word[1])
     dest = DEFAULT_LANG
     src = None
 
@@ -415,7 +417,7 @@ def add_job(word, word_eol, userdata):
         Adds a new translation job to the queue.
     """
     channel = hexchat.get_info('channel')
-    key = channel + " " + word[0].lower()
+    key = channel + " " + hexchat.strip(word[0].lower())
 
     if key in AUTOUSER:
         dest, src = AUTOUSER[key]
