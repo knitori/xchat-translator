@@ -5,7 +5,7 @@ __module_version__ = "0.9"
 __module_description__ = "Translates from one language to others using Google Translate via YQL."
 __module_author__ = "Chuong Ngo, karona75, briand"
 
-import xchat
+import hexchat
 import json
 import urllib.request
 import queue
@@ -288,13 +288,13 @@ def translate_detect_lang(word, word_eol, userdata):
     src, text = Translator.translate(word_eol[2], dest_lang, None)
 
     if src is None or text is None:
-        xchat.prnt("Error occurred during translation.")
+        hexchat.prnt("Error occurred during translation.")
     else:
-        xchat.command("say " + text)
+        hexchat.command("say " + text)
 
-    return xchat.EAT_ALL
+    return hexchat.EAT_ALL
 
-xchat.hook_command(
+hexchat.hook_command(
     "TR", translate_detect_lang,
     help="/TR <target language> <message> - translates message into the "
          "language specified.  This auto detects the source language.  "
@@ -313,14 +313,14 @@ def translate_no_detect(word, word_eol, userdata):
     src, text = Translator.translate(message, dest_lang, src_lang)
 
     if src is None or text is None:
-        xchat.prnt("Error occurred during translation.")
+        hexchat.prnt("Error occurred during translation.")
     else:
-        xchat.prnt("Translated from " + Translator.find_lang_name(src_lang)
-                   + " to " + Translator.find_lang_name(dest_lang)
-                   + ": " + text)
-    return xchat.EAT_ALL
+        hexchat.prnt("Translated from " + Translator.find_lang_name(src_lang)
+                     + " to " + Translator.find_lang_name(dest_lang)
+                     + ": " + text)
+    return hexchat.EAT_ALL
 
-xchat.hook_command(
+hexchat.hook_command(
     "TM", translate_no_detect,
     help="/TM <source_language> <target_language> <message> - translates "
          "message into the language specified.  This is not threaded.")
@@ -331,8 +331,8 @@ def add_user(word, word_eol, userdata):
         Adds a user to the watch list to automatically translate.
     """
     if len(word) < 2:
-        xchat.prnt("You must specify a user.")
-        return xchat.EAT_ALL
+        hexchat.prnt("You must specify a user.")
+        return hexchat.EAT_ALL
 
     user = word[1]
     dest = DEFAULT_LANG
@@ -344,13 +344,13 @@ def add_user(word, word_eol, userdata):
     if len(word) > 3 and Translator.find_lang_code(word[3]) is not None:
         src = word[3]
 
-    AUTOUSER[xchat.get_info('channel') + ' ' + user.lower()] = (dest, src)
-    xchat.prnt("Added user %s to the watch list." % user)
+    AUTOUSER[hexchat.get_info('channel') + ' ' + user.lower()] = (dest, src)
+    hexchat.prnt("Added user %s to the watch list." % user)
 
-    return xchat.EAT_ALL
+    return hexchat.EAT_ALL
 
-xchat.command('MENU ADD "$NICK/[+] AutoTranslate" "ADDTR %s"')
-xchat.hook_command(
+hexchat.command('MENU ADD "$NICK/[+] AutoTranslate" "ADDTR %s"')
+hexchat.hook_command(
     "ADDTR", add_user,
     help="/ADDTR <user_nick> <target_language> <source_language> - adds the "
          "user to the watch list for automatic translations.  If "
@@ -364,19 +364,19 @@ def remove_user(word, word_eol, userdata):
         Removes a user from the watch list to automatically translate.
     """
     if len(word) < 2:
-        xchat.prnt("You must specify a user.")
-        return xchat.EAT_ALL
+        hexchat.prnt("You must specify a user.")
+        return hexchat.EAT_ALL
 
     user = word[1]
 
-    if AUTOUSER.pop(xchat.get_info('channel') + ' ' + user.lower(), None)\
+    if AUTOUSER.pop(hexchat.get_info('channel') + ' ' + user.lower(), None)\
             is not None:
-        xchat.prnt("User %s has been removed from the watch list." % user)
+        hexchat.prnt("User %s has been removed from the watch list." % user)
 
-    return xchat.EAT_ALL
+    return hexchat.EAT_ALL
 
-xchat.command('MENU ADD "$NICK/[-] AutoTranslate" "RMTR %s"')
-xchat.hook_command(
+hexchat.command('MENU ADD "$NICK/[-] AutoTranslate" "RMTR %s"')
+hexchat.hook_command(
     "RMTR", remove_user,
     help="/RMTR <user_nick> - removes user_nick from "
          "the watch list for automatic translations.")
@@ -388,10 +388,10 @@ def print_watch_list(word, word_eol, userdata):
     """
     users = [key.split(' ')[1] for key in AUTOUSER.keys()]
 
-    xchat.prnt("WatchList: %s" % (" ".join(users)))
-    return xchat.EAT_ALL
+    hexchat.prnt("WatchList: %s" % (" ".join(users)))
+    return hexchat.EAT_ALL
 
-xchat.hook_command(
+hexchat.hook_command(
     "LSUSERS", print_watch_list,
     help="/LSUSERS - prints out all users on the watch list for automatic "
          "translations to the screen locally.")
@@ -401,9 +401,9 @@ def read_error(word, word_eol, userdata):
     """
         Prints out the last error.
     """
-    xchat.prnt("Last error: " + LAST_ERROR)
+    hexchat.prnt("Last error: " + LAST_ERROR)
 
-xchat.hook_command(
+hexchat.hook_command(
     "LASTERROR", read_error, help="/LASTERROR - prints out the last error "
                                   "message to screen locally.")
 
@@ -412,17 +412,17 @@ def add_job(word, word_eol, userdata):
     """
         Adds a new translation job to the queue.
     """
-    channel = xchat.get_info('channel')
+    channel = hexchat.get_info('channel')
     key = channel + " " + word[0].lower()
 
     if key in AUTOUSER:
         dest, src = AUTOUSER[key]
-        ThreadController.add_job((xchat.get_context(), word[0],
+        ThreadController.add_job((hexchat.get_context(), word[0],
                                  src, dest, word[1]))
 
-    return xchat.EAT_NONE
+    return hexchat.EAT_NONE
 
-xchat.hook_print("Channel Message", add_job)
+hexchat.hook_print("Channel Message", add_job)
 
 
 def unload_translator(userdata):
@@ -432,9 +432,9 @@ def unload_translator(userdata):
     """
     ThreadController.worker.kill = True
     ThreadController.add_job(None)
-    print('Translator is unloaded')
+    hexchat.prnt('Translator is unloaded')
 
-xchat.hook_unload(unload_translator)
+hexchat.hook_unload(unload_translator)
 
 # Load successful, print message
-print('Translator script loaded successfully.')
+hexchat.prnt('Translator script loaded successfully.')
