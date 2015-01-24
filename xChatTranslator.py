@@ -135,7 +135,8 @@ class Translator:
         src = cls.find_lang_code(source_lang)
         dest = cls.find_lang_code(dest_lang)
 
-        # using {!r} should avoid Bad Request errors because of quotation marks
+        # using {!r} should avoid Bad Request errors
+        # because of quotation marks
         if src is None and dest is not None:
             query = 'select * from google.translate where q={!r} ' \
                     'and target="{}";'.format(message, dest)
@@ -153,7 +154,8 @@ class Translator:
             'env': ['http://datatables.org/alltables.env']
         }
         baseurl = 'http://query.yahooapis.com/v1/public/yql'
-        query_string = urllib.parse.urlencode(params, doseq=True)
+        query_string = urllib.parse.urlencode(params, doseq=True,
+                                              encoding='utf-8')
         return baseurl + '?' + query_string
 
     @classmethod
