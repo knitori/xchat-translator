@@ -403,7 +403,10 @@ def unload_translator(userdata):
 def set_default_language(word, word_eol, userdata):
 
     if len(word) < 2:
-        hexchat.prnt("You must specify a language.")
+        lang = get_default_language()
+        hexchat.prnt("Default language: {} ({})".format(
+            Translator.find_lang_name(lang), lang
+        ))
         return hexchat.EAT_ALL
 
     lang = Translator.find_lang_code(word[1])
@@ -418,9 +421,34 @@ def set_default_language(word, word_eol, userdata):
 
 def get_default_language():
     language = hexchat.get_pluginpref('default_language')
-    if language is None:
+    if language is not None:
+        return language
+
+    # try some fallbacks
+    languages = hexchat.get_prefs('text_spell_langs')
+    if languages is None or not languages.strip():
         return 'en'
-    return language
+
+    for language in languages.split(','):
+        language = language.strip()
+        if not language:
+            continue
+
+        # try it as-is
+        lang = Translator.find_lang_code(language)
+        if lang is not None:
+            return lang
+
+        lang = Translator.find_lang_code(language.replace('_', '-'))
+        if lang is not None:
+            return lang
+
+        # remove the "_US" bit from e.g. "en_US".
+        lang = Translator.find_lang_code(language.split('_', 1)[0])
+        if lang is not None:
+            return lang
+
+    return 'en'
 
 
 hexchat.hook_command(
@@ -465,7 +493,8 @@ hexchat.hook_unload(unload_translator)
 
 hexchat.hook_command(
     'TRDEFAULT', set_default_language,
-    help="/TRDEFAULT <language> - set the default language.")
+    help="/TRDEFAULT [language] - set the default language. "
+         "If none is provided, return the current default.")
 
 # Load successful, print message
 hexchat.prnt('Translator script loaded successfully.')
