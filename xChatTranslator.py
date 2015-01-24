@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 __module_name__ = "translator"
-__module_version__ = "0.9"
+__module_version__ = "0.10"
 __module_description__ = "Translates from one language to others using Google Translate via YQL."
-__module_author__ = "Chuong Ngo, karona75, briand"
+__module_author__ = "Chuong Ngo, karona75, briand, knitori"
 
 import hexchat
 import json
