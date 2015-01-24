@@ -13,8 +13,6 @@ import queue
 import threading
 from threading import Thread
 
-DEFAULT_LANG = 'en'
-
 AUTOUSER = {}
 LAST_ERROR = ''
 
@@ -328,7 +326,7 @@ def add_user(word, word_eol, userdata):
         return hexchat.EAT_ALL
 
     user = hexchat.strip(word[1])
-    dest = DEFAULT_LANG
+    dest = get_default_language()
     src = None
 
     if len(word) > 2 and Translator.find_lang_code(word[2]) is not None:
@@ -402,6 +400,29 @@ def unload_translator(userdata):
     hexchat.prnt('Translator is unloaded')
 
 
+def set_default_language(word, word_eol, userdata):
+
+    if len(word) < 2:
+        hexchat.prnt("You must specify a language.")
+        return hexchat.EAT_ALL
+
+    lang = Translator.find_lang_code(word[1])
+    if lang is not None:
+        hexchat.set_pluginpref('default_language', word[1])
+        hexchat.prnt("Succesfully set language to {}".format(Translator.find_lang_name(lang)))
+    else:
+        hexchat.prnt("Invalid language.")
+
+    return hexchat.EAT_ALL
+
+
+def get_default_language():
+    language = hexchat.get_pluginpref('default_language')
+    if language is None:
+        return 'en'
+    return language
+
+
 hexchat.hook_command(
     "TR", translate_detect_lang,
     help="/TR <target language> <message> - translates message into the "
@@ -441,6 +462,10 @@ hexchat.hook_command(
 hexchat.hook_print("Channel Message", add_job)
 
 hexchat.hook_unload(unload_translator)
+
+hexchat.hook_command(
+    'TRDEFAULT', set_default_language,
+    help="/TRDEFAULT <language> - set the default language.")
 
 # Load successful, print message
 hexchat.prnt('Translator script loaded successfully.')
