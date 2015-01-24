@@ -8,6 +8,7 @@ __module_author__ = "Chuong Ngo, karona75, briand"
 import hexchat
 import json
 import urllib.request
+import urllib.parse
 import queue
 import threading
 from threading import Thread
@@ -134,24 +135,26 @@ class Translator:
         src = cls.find_lang_code(source_lang)
         dest = cls.find_lang_code(dest_lang)
 
+        # using {!r} should avoid Bad Request errors because of quotation marks
         if src is None and dest is not None:
-            # No source language was provided, automatically detect the language
-            return "http://query.yahooapis.com/v1/public/yql?q=select%20*" \
-                   "%20from%20google.translate%20where%20q%3D%22" + \
-                   urllib.request.quote(message) + "%22%20and%20target%3D%22" +\
-                   dest + "%22%3B&format=json&diagnostics=true&env=http%" \
-                   "3A%2F%2Fdatatables.org%2Falltables.env&callback="
-
-        if src is not None and dest is not None:
-            # Source language was provided, don't detect the language
-            return "http://query.yahooapis.com/v1/public/yql?q=select%20*" \
-                   "%20from%20google.translate%20where%20q%3D%22"\
-                   + urllib.request.quote(message) + "%22%20and%20target%3D%22"\
-                   + dest + "%22%20and%20source%3D%22" + src\
-                   + "%22%3B&format=json&env=store%3A%2F%2Fdatatables.org" \
-                     "%2Falltableswithkeys&callback="
-
-        return None
+            query = 'select * from google.translate where q={!r} ' \
+                    'and target="{}";'.format(message, dest)
+        elif src is not None and dest is not None:
+            query = 'select * from google.translate where q={!r} ' \
+                    'and target="{}" ' \
+                    'and source="{}e";'.format(message, dest, src)
+        else:
+            return None
+        print(query)
+        params = {
+            'diagnostics': ['true'],
+            'format': ['json'],
+            'q': query,
+            'env': ['http://datatables.org/alltables.env']
+        }
+        baseurl = 'http://query.yahooapis.com/v1/public/yql'
+        query_string = urllib.parse.urlencode(params, doseq=True)
+        return baseurl + '?' + query_string
 
     @classmethod
     def find_lang_code(cls, language):
