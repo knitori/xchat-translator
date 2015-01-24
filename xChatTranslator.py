@@ -7,8 +7,8 @@ __module_author__ = "Chuong Ngo, karona75, briand"
 
 import xchat
 import json
-import urllib2
-import Queue
+import urllib.request
+import queue
 import threading
 from threading import Thread
 import traceback
@@ -123,7 +123,7 @@ class Translator:
     }
 
     # Mapping to get the language from the language code
-    LANGUAGES_REVERSE = dict([(v, k) for (k, v) in LANGUAGES.iteritems()])
+    LANGUAGES_REVERSE = dict([(v, k) for (k, v) in LANGUAGES.items()])
 
     CODES_SET = set(LANGUAGES.values())
 
@@ -138,7 +138,7 @@ class Translator:
             # No source language was provided, automatically detect the language
             return "http://query.yahooapis.com/v1/public/yql?q=select%20*" \
                    "%20from%20google.translate%20where%20q%3D%22" + \
-                   urllib2.quote(message) + "%22%20and%20target%3D%22" +\
+                   urllib.request.quote(message) + "%22%20and%20target%3D%22" +\
                    dest + "%22%3B&format=json&diagnostics=true&env=http%" \
                    "3A%2F%2Fdatatables.org%2Falltables.env&callback="
 
@@ -146,7 +146,7 @@ class Translator:
             # Source language was provided, don't detect the language
             return "http://query.yahooapis.com/v1/public/yql?q=select%20*" \
                    "%20from%20google.translate%20where%20q%3D%22"\
-                   + urllib2.quote(message) + "%22%20and%20target%3D%22"\
+                   + urllib.request.quote(message) + "%22%20and%20target%3D%22"\
                    + dest + "%22%20and%20source%3D%22" + src\
                    + "%22%3B&format=json&env=store%3A%2F%2Fdatatables.org" \
                      "%2Falltableswithkeys&callback="
@@ -202,7 +202,7 @@ class Translator:
             return None, None
 
         headers = {'User-Agent': 'Mozilla/5.0'}
-        response = urllib2.urlopen(urllib2.Request(url, None, headers))
+        response = urllib.request.urlopen(urllib.request.Request(url, None, headers))
 
         return cls.parse_json_result(response.read())
     translate = classmethod(translate)
@@ -256,11 +256,11 @@ class TranslatorThread(Thread):
                     context.emit_print("Channel Message",
                                        "[%s][%s]" % (user, lang),
                                        translated_text)
-            except TranslateException, e:
+            except TranslateException as e:
                 LAST_ERROR = "[TE: %s] <%s> %s" % (e, user, text)
-            except urllib2.URLError, e:
+            except urllib.request.URLError as e:
                 LAST_ERROR = "[URL] %s" % e
-            except UnicodeError, e:
+            except UnicodeError as e:
                 LAST_ERROR = "[Encode: %s] <%s> %s" % (e, user, text)
 
 
@@ -268,7 +268,7 @@ class ThreadController:
     """
         Controls the threads
     """
-    jobs = Queue.Queue()
+    jobs = queue.Queue()
     worker = TranslatorThread(jobs)
     worker.setDaemon(True)
     worker.start()
@@ -284,7 +284,6 @@ def translate_detect_lang(word, word_eol, userdata):
         with source language detection
     """
     dest_lang = word[1]
-    message = unicode(word_eol[2], "utf-8")
 
     src, text = Translator.translate(word_eol[2], dest_lang, None)
 
@@ -390,7 +389,7 @@ def print_watch_list(word, word_eol, userdata):
     users = [key.split(' ')[1] for key in AUTOUSER.keys()]
 
     xchat.prnt("WatchList: %s" % (" ".join(users)))
-    xchat.EAT_ALL
+    return xchat.EAT_ALL
 
 xchat.hook_command(
     "LSUSERS", print_watch_list,
@@ -416,9 +415,9 @@ def add_job(word, word_eol, userdata):
     channel = xchat.get_info('channel')
     key = channel + " " + word[0].lower()
 
-    if AUTOUSER.has_key(key):
+    if key in AUTOUSER:
         dest, src = AUTOUSER[key]
-        ThreadController.addJob((xchat.get_context(), word[0],
+        ThreadController.add_job((xchat.get_context(), word[0],
                                  src, dest, word[1]))
 
     return xchat.EAT_NONE
@@ -432,10 +431,10 @@ def unload_translator(userdata):
         when unloading the module.
     """
     ThreadController.worker.kill = True
-    ThreadController.addJob(None)
-    print 'Translator is unloaded'
+    ThreadController.add_job(None)
+    print('Translator is unloaded')
 
 xchat.hook_unload(unload_translator)
 
 # Load successful, print message
-print 'Translator script loaded successfully.'
+print('Translator script loaded successfully.')
