@@ -11,7 +11,6 @@ import urllib.request
 import queue
 import threading
 from threading import Thread
-import traceback
 
 DEFAULT_LANG = 'en'
 
@@ -127,6 +126,7 @@ class Translator:
 
     CODES_SET = set(LANGUAGES.values())
 
+    @classmethod
     def get_url(cls, message, dest_lang, source_lang=None):
         """
             Returns the url string to be used to translate the text.
@@ -152,8 +152,8 @@ class Translator:
                      "%2Falltableswithkeys&callback="
 
         return None
-    get_url = classmethod(get_url)
 
+    @classmethod
     def find_lang_code(cls, language):
         """
             Checks if the specifed language is in the dict
@@ -171,8 +171,8 @@ class Translator:
 
         # The language is not in the dict LANGUAGES
         return None
-    find_lang_code = classmethod(find_lang_code)
 
+    @classmethod
     def find_lang_name(cls, language):
         if language is None:
             return None
@@ -186,8 +186,8 @@ class Translator:
             return cls.LANGUAGES_REVERSE[language]
 
         return None
-    find_lang_name = classmethod(find_lang_name)
 
+    @classmethod
     def translate(cls, message, source_lang, dest_lang):
         """
             Contacts the translation website via
@@ -203,10 +203,9 @@ class Translator:
 
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = urllib.request.urlopen(urllib.request.Request(url, None, headers))
+        return cls.parse_json_result(response.read().decode('utf-8'))
 
-        return cls.parse_json_result(response.read())
-    translate = classmethod(translate)
-
+    @classmethod
     def parse_json_result(cls, result):
         """
             Parse the JSON returned from calling YQL to
@@ -224,18 +223,16 @@ class Translator:
             for subDict in data_arr:
                 translation += subDict['trans']
 
-        return (cls.LANGUAGES_REVERSE[source_lang],
-                translation.encode("utf-8"))
-    parse_json_result = classmethod(parse_json_result)
+        return cls.LANGUAGES_REVERSE[source_lang], translation
 
 
 class TranslatorThread(Thread):
     """
         Performs the translations in threads so as not to lock up XChat.
     """
-    def __init__(self, queue):
+    def __init__(self, q):
         threading.Thread.__init__(self, target=self.run)
-        self.queue = queue
+        self.queue = q
         self.kill = False
 
     def run(self):
@@ -273,9 +270,9 @@ class ThreadController:
     worker.setDaemon(True)
     worker.start()
 
+    @classmethod
     def add_job(cls, job):
         cls.jobs.put(job)
-    add_job = classmethod(add_job)
 
 
 def translate_detect_lang(word, word_eol, userdata):
