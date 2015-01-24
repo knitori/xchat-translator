@@ -52,6 +52,13 @@ Further Development:
 
 CHANGE LOG
 ==========
+v0.10
+- Applied coding style guide according to [PEP-0008](https://www.python.org/dev/peps/pep-0008/).
+- Converted Script to Python3.
+- Bug fixes:
+	- Avoid YQL "injections" by using Pythons string representation, to escape quotation marks properly.
+	- Strip colors from nicknames when adding to AUTOUSER dictionary.
+
 v0.9
 - Added context menu to Add/Remove user from AutoTranslate list [briand]
 	- This has been test
